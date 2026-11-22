@@ -115,11 +115,7 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
     private var restoringConfigAfterBoot = false
     private var lastApnHealAtMillis = 0L
     private var healingApnDrift = false
-    private val canUsePersistentOverride by lazy {
-        val flags = application.applicationInfo.flags
-        (flags and ApplicationInfo.FLAG_SYSTEM) != 0 ||
-            (flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-    }
+    private val preferPersistentOverride = true
 
     private fun normalizeMcc(raw: String): String {
         return raw.filter { it.isDigit() }.take(3)
@@ -422,7 +418,7 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
             enableShow4GForLTE
         )
         bundle.putInt(ImsModifier.BUNDLE_SELECT_SIM_ID, selectedSim.subId)
-        bundle.putBoolean(ImsModifier.BUNDLE_PREFER_PERSISTENT, canUsePersistentOverride)
+        bundle.putBoolean(ImsModifier.BUNDLE_PREFER_PERSISTENT, preferPersistentOverride)
 
         // 调用 Shizuku 服务进行实际修改
         val resultMsg = ShizukuProvider.overrideImsConfig(application, bundle)
@@ -819,7 +815,7 @@ class MainViewModel(private val application: Application) : AndroidViewModel(app
     suspend fun onResetConfiguration(selectedSim: SimSelection): Boolean {
         val bundle = ImsModifier.buildResetBundle()
         bundle.putInt(ImsModifier.BUNDLE_SELECT_SIM_ID, selectedSim.subId)
-        bundle.putBoolean(ImsModifier.BUNDLE_PREFER_PERSISTENT, canUsePersistentOverride)
+        bundle.putBoolean(ImsModifier.BUNDLE_PREFER_PERSISTENT, preferPersistentOverride)
         val resultMsg = ShizukuProvider.overrideImsConfig(application, bundle)
         if (resultMsg == null) {
             application.getSharedPreferences(

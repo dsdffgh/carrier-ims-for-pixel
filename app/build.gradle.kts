@@ -123,8 +123,14 @@ dependencies {
     implementation(libs.androidx.splashscreen)
     implementation(libs.lifecycle.viewmodel.ktx)
 
+    testImplementation("junit:junit:4.13.2")
     testImplementation(kotlin("test"))
+    testImplementation(kotlin("test-junit"))
     testImplementation(libs.org.json)
 }
 
 apply(from = rootProject.file("signing.gradle"))
+
+tasks.withType<Test>().configureEach {
+    jvmArgs("-Djava.net.preferIPv4Stack=true")
+}

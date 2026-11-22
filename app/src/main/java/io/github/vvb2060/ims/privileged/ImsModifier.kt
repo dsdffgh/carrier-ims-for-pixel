@@ -282,7 +282,7 @@ class ImsModifier : Instrumentation() {
             }
         } finally {
             runCatching {
-                am.stopDelegateShellPermissionIdentity()
+                am.stopDelegateShellPermissionIdentityCompat()
                 Log.i(TAG, "stopped shell permission delegation")
             }.onFailure { Log.w(TAG, "stop delegate shell identity failed", it) }
         }
@@ -295,51 +295,7 @@ class ImsModifier : Instrumentation() {
         values: PersistableBundle?,
         preferPersistent: Boolean,
     ) {
-        if (!preferPersistent) {
-            invokeOverrideConfig(cm, subId, values, persistent = false)
-            return
-        }
-        try {
-            invokeOverrideConfig(cm, subId, values, persistent = true)
-            Log.i(TAG, "overrideConfig persistent success for subId $subId")
-        } catch (persistentError: Throwable) {
-            Log.w(
-                TAG,
-                "overrideConfig persistent failed for subId $subId, fallback to non-persistent",
-                persistentError
-            )
-            try {
-                invokeOverrideConfig(cm, subId, values, persistent = false)
-                Log.i(TAG, "overrideConfig fallback non-persistent success for subId $subId")
-            } catch (fallbackError: Throwable) {
-                fallbackError.addSuppressed(persistentError)
-                throw fallbackError
-            }
-        }
-    }
-
-    @Throws(Exception::class)
-    private fun invokeOverrideConfig(
-        cm: CarrierConfigManager,
-        subId: Int,
-        values: PersistableBundle?,
-        persistent: Boolean,
-    ) {
-        // 使用反射调用 overrideConfig
-        try {
-            cm.javaClass.getMethod(
-                "overrideConfig",
-                Int::class.javaPrimitiveType,
-                PersistableBundle::class.java,
-                Boolean::class.javaPrimitiveType
-            ).invoke(cm, subId, values, persistent)
-        } catch (_: NoSuchMethodException) {
-            cm.javaClass.getMethod(
-                "overrideConfig",
-                Int::class.javaPrimitiveType,
-                PersistableBundle::class.java
-            ).invoke(cm, subId, values)
-        }
+        CarrierConfigAccess.applyOverrideConfig(cm, subId, values, preferPersistent, TAG)
     }
 
     @Throws(Exception::class)

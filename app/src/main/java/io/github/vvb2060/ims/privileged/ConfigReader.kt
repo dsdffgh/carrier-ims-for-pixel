@@ -44,7 +44,7 @@ class ConfigReader : Instrumentation() {
             delegated = true
             val subId = arguments.getInt(BUNDLE_SELECT_SIM_ID, -1)
             val cm = context.getSystemService(CarrierConfigManager::class.java)
-            val config = cm.getConfigForSubId(subId)
+            val config = CarrierConfigAccess.getConfigForSubId(subId, context.packageName, cm)
             if (config == null) {
                 result.putString(BUNDLE_DUMP_TEXT, "")
             } else if (arguments.getBoolean(BUNDLE_DUMP, false)) {
@@ -61,7 +61,7 @@ class ConfigReader : Instrumentation() {
             Log.e(TAG, "read config failed", t)
         } finally {
             if (delegated) {
-                runCatching { am.stopDelegateShellPermissionIdentity() }
+                runCatching { am.stopDelegateShellPermissionIdentityCompat() }
                     .onFailure { Log.w(TAG, "stop delegate shell identity failed", it) }
             }
         }

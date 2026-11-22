@@ -47,6 +47,8 @@ class BrokerInstrumentation : Instrumentation() {
             arguments.remove(ImsModifier.BUNDLE_RESET)
             val preferPersistent = arguments.getBoolean(ImsModifier.BUNDLE_PREFER_PERSISTENT, false)
             arguments.remove(ImsModifier.BUNDLE_PREFER_PERSISTENT)
+            arguments.remove("country_mcc_override")
+            arguments.remove("country_mnc_hint")
 
             val subIds: IntArray = if (selectedSubId == -1) {
                 sm.javaClass.getMethod("getActiveSubscriptionIdList").invoke(sm) as IntArray
@@ -72,7 +74,7 @@ class BrokerInstrumentation : Instrumentation() {
             result.putString(ImsModifier.BUNDLE_RESULT_MSG, t.message ?: t.javaClass.simpleName)
         } finally {
             if (delegated) {
-                runCatching { am.stopDelegateShellPermissionIdentity() }
+                runCatching { am.stopDelegateShellPermissionIdentityCompat() }
                     .onFailure { Log.w(TAG, "stop delegate shell identity failed", it) }
             }
         }
@@ -87,50 +89,7 @@ class BrokerInstrumentation : Instrumentation() {
         values: PersistableBundle?,
         preferPersistent: Boolean,
     ) {
-        if (!preferPersistent) {
-            invokeOverrideConfig(cm, subId, values, persistent = false)
-            return
-        }
-        try {
-            invokeOverrideConfig(cm, subId, values, persistent = true)
-            Log.i(TAG, "overrideConfig persistent success for subId $subId")
-        } catch (persistentError: Throwable) {
-            Log.w(
-                TAG,
-                "overrideConfig persistent failed for subId $subId, fallback to non-persistent",
-                persistentError
-            )
-            try {
-                invokeOverrideConfig(cm, subId, values, persistent = false)
-                Log.i(TAG, "overrideConfig fallback non-persistent success for subId $subId")
-            } catch (fallbackError: Throwable) {
-                fallbackError.addSuppressed(persistentError)
-                throw fallbackError
-            }
-        }
-    }
-
-    @Throws(Exception::class)
-    private fun invokeOverrideConfig(
-        cm: CarrierConfigManager,
-        subId: Int,
-        values: PersistableBundle?,
-        persistent: Boolean,
-    ) {
-        try {
-            cm.javaClass.getMethod(
-                "overrideConfig",
-                Int::class.javaPrimitiveType,
-                PersistableBundle::class.java,
-                Boolean::class.javaPrimitiveType
-            ).invoke(cm, subId, values, persistent)
-        } catch (_: NoSuchMethodException) {
-            cm.javaClass.getMethod(
-                "overrideConfig",
-                Int::class.javaPrimitiveType,
-                PersistableBundle::class.java
-            ).invoke(cm, subId, values)
-        }
+        CarrierConfigAccess.applyOverrideConfig(cm, subId, values, preferPersistent, TAG)
     }
 
     @Suppress("UNCHECKED_CAST", "DEPRECATION")

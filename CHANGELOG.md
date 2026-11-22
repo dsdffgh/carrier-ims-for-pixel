@@ -1,3 +1,17 @@
+## 3.9.1 (2026-11-18)
+
+### 上游同步 (Backport from upstream 3.9.1)
+- 兼容部分 Android 17 系统带 UID 参数的权限释放接口（`stopDelegateShellPermissionIdentity(int uid)`），避免配置已写入却抛出 `NoSuchMethodError` 并中断后续 IMS 注册。
+- 统一特权功能入口的权限释放逻辑，运行时自适应新旧签名，清理异常保留日志且不覆盖原操作结果。
+
+### 个人自用版专属特性 (Personal Enhancements)
+- **纯净版体验**：彻底移除上游 3.9.0 引入的赞助打赏弹窗、合作广告及商业化表单代码，启动秒开，零背景干扰。
+- **Android 17 IMS APN 拆分与自愈**：解决部分运营商（如中国电信 CTNET）在 Android 17 下将 `default,supl,ims` 混写在一个 APN 行导致无法建立独立 IMS PDN 的问题；自动拆分独立 `type=ims` APN，并在 Shizuku 就绪时防反弹自愈维护。
+- **CarrierConfig 持久化增强**：支持通过 `ICarrierConfigLoader` 接口直接应用持久化配置并在失败时优雅回退。
+- **仓库与更新链路切换**：更新检测与仓库支持入口指向本仓库（`dsdffgh/carrier-ims-for-pixel`）。
+
+---
+
 ## 3.9.0.r101 (2026-06-20)
 
 ### 优化
